@@ -2,15 +2,11 @@ import CountdownTimer from "@/components/CountdownTimer";
 import Header from "@/components/Header";
 import Loading from "@/components/Loading";
 import Login from "@/components/Login";
-import { useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
+import { useLotteryContract } from "@/hooks/useLotteryContract";
 import { ethers } from "ethers";
 import { NextPage } from "next";
 import Head from "next/head";
 import { useState } from "react";
-
-const CONTRACT_ADDRESS =
-  process.env.NEXT_PUBLICK_LOTTERY_CONTRACT_ADDRES ||
-  "0xaA65c64a0c17477156B6513AbF2bC57ACC503524";
 
 const convertToEtherPrice = (price: number): number =>
   price && Number(ethers.utils.formatEther(price.toString()));
@@ -20,29 +16,16 @@ const priceView = (price: number) =>
   `${convertToEtherPrice(price)} ${CURRENCY}`;
 
 const Home: NextPage = () => {
-  const address = useAddress();
-  const { contract, isLoading } = useContract(CONTRACT_ADDRESS);
-  const { data: remainingTickets } = useContractRead(
-    contract,
-    "RemainingTickets"
-  );
-
-  const { data: currentWinningReward } = useContractRead(
-    contract,
-    "CurrentWinningReward"
-  );
-  const { data: ticketCommission } = useContractRead(
-    contract,
-    "ticketCommission"
-  );
-
-  const { data: expiration, isLoading: isLoadingExpiration } = useContractRead(
-    contract,
-    "expiration"
-  );
-
-  const { data: ticketPrice } = useContractRead(contract, "ticketPrice");
-
+  const {
+    address,
+    expiration,
+    isLoadingContract,
+    currentWinningReward,
+    remainingTickets,
+    isLoadingExpiration,
+    ticketPrice,
+    ticketCommission,
+  } = useLotteryContract();
   const [quantity, setQuantity] = useState<number>(1);
   const isTicketsExpired = expiration?.toString() < Date.now().toString();
 
@@ -50,7 +33,7 @@ const Home: NextPage = () => {
     return <Login />;
   }
 
-  if (isLoading) {
+  if (isLoadingContract) {
     return <Loading />;
   }
 
@@ -74,7 +57,7 @@ const Home: NextPage = () => {
               </div>
               <div className="stats">
                 <h2 className="text-sm">Tickets Remaining</h2>
-                <p className="text-xl">{remainingTickets?.toNumber()}</p>
+                <p className="text-xl">{remainingTickets?.toNumber}</p>
               </div>
             </div>
             <div className="mt-5 mb-3">
