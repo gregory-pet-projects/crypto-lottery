@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components{
+  .stats{
+    @apply bg-[#091f1c] text-white p-4 flex-1 rounded-md border-2 border-[#004337]
+  }
+  .stats-container{
+    @apply bg-[#091f1c] p-5 rounded-lg border-[#004337] border flex-1
+  }
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
