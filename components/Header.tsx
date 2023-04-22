@@ -38,10 +38,10 @@ const Header = ({}) => {
 
       <div className="flex flex-col ml-auto text-right">
         <Bars3BottomRightIcon className="h-8 w-8 mx-auto text-white cursor-pointer" />
+        <span className="md:hidden">
+          <NavButton onClick={disconnect} title="Logout" />
+        </span>
       </div>
-      <span className="md:hidden">
-        <NavButton onClick={disconnect} title="Logout" />
-      </span>
     </header>
   );
 };
