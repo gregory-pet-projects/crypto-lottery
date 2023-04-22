@@ -5,7 +5,7 @@ const Login = () => {
   return (
     <div className="bg-[#091b18] min-h-screen flex flex-col items-center justify-center text-center">
       <div className="flex flex-col items-center mb-10">
-        <h1 className="text-6xl text white fon-bold mb-5">Lottery Web3</h1>
+        <h1 className="text-6xl text white font-bold mb-5">Lottery Web3</h1>
         <h2 className="text-white">
           Get Started By loggin in with your Metamask
         </h2>
