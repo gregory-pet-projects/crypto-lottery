@@ -81,6 +81,7 @@ const Home: NextPage = () => {
         Number(ethers.utils.formatEther(ticketPrice)) * quantity
       ).toString();
       const payValue = ethers.utils.parseEther(totalPrice);
+      //@ts-ignore
       const data = await BuyTickets(payValue);
     };
 

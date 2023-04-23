@@ -61,7 +61,11 @@ const CountdownTimer = ({ expiration, isLoadingExpiration }: Props) => {
   };
   return (
     <div className="">
-      <Countdown date={new Date(expiration * 1000)} renderer={renderer} />
+      <Countdown
+        date={new Date(expiration * 1000)}
+        //@ts-ignore
+        renderer={renderer}
+      />
     </div>
   );
 };
