@@ -1,4 +1,9 @@
-import { useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
+import {
+  useAddress,
+  useContract,
+  useContractRead,
+  useContractWrite,
+} from "@thirdweb-dev/react";
 
 const CONTRACT_ADDRESS =
   process.env.NEXT_PUBLICK_LOTTERY_CONTRACT_ADDRES ||
@@ -26,6 +31,10 @@ export const useLotteryContract = () => {
     contract,
     "expiration"
   );
+  const { data: tickets } = useContractRead(contract, "getTickets");
+
+  const { mutateAsync: BuyTickets, isLoading: isLoadingBuyTickets } =
+    useContractWrite(contract, "BuyTickets");
 
   const { data: ticketPrice } = useContractRead(contract, "ticketPrice");
   return {
@@ -37,5 +46,8 @@ export const useLotteryContract = () => {
     isLoadingExpiration,
     ticketPrice,
     isLoadingContract,
+    BuyTickets,
+    isLoadingBuyTickets,
+    tickets,
   };
 };
