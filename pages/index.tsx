@@ -3,10 +3,11 @@ import Header from "@/components/Header";
 import Loading from "@/components/Loading";
 import Login from "@/components/Login";
 import { useLotteryContract } from "@/hooks/useLotteryContract";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { NextPage } from "next";
 import Head from "next/head";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 const convertToEtherPrice = (price: number): number =>
   price && Number(ethers.utils.formatEther(price.toString()));
@@ -25,9 +26,58 @@ const Home: NextPage = () => {
     isLoadingExpiration,
     ticketPrice,
     ticketCommission,
+    BuyTickets,
+    tickets,
   } = useLotteryContract();
   const [quantity, setQuantity] = useState<number>(1);
   const isTicketsExpired = expiration?.toString() < Date.now().toString();
+  const [userTickets, setUserTickets] = useState<number>(0);
+
+  useEffect(() => {
+    if (!tickets) return;
+
+    const totalTickets: string[] = tickets;
+    const noOfUserTickets = totalTickets.reduce(
+      (total, ticketAddress) => (ticketAddress === address ? total + 1 : total),
+      0
+    );
+    setUserTickets(noOfUserTickets);
+  }, [tickets, address]);
+
+  const handleBuyTickets = async () => {
+    if (!ticketPrice) return;
+    const notification = toast.loading("Buying your tickets...");
+    try {
+      const totalPrice = (
+        Number(ethers.utils.formatEther(ticketPrice)) * quantity
+      ).toString();
+      const payValue = ethers.utils.parseEther(totalPrice);
+
+      // const data = await BuyTickets([
+      //   {
+      //     value: ethers.utils.parseEther(totalPrice),
+      //   },
+      // ]);
+
+      console.log("totalPrice", totalPrice);
+      //      const data = await BuyTickets({ args: [{ ticketPrice: totalPrice }] });
+      const data = await BuyTickets([
+        {
+          value: payValue,
+        },
+      ]);
+
+      console.log("===>", ethers.utils.parseEther(totalPrice));
+
+      toast.success("Tickets purchased successfully!", { id: notification });
+      console.log("contract call success", data);
+    } catch (e) {
+      toast.error("Whoops something went wrong!", {
+        id: notification,
+      });
+      console.error("contract call failure", e);
+    }
+  };
 
   if (!address) {
     return <Login />;
@@ -57,7 +107,7 @@ const Home: NextPage = () => {
               </div>
               <div className="stats">
                 <h2 className="text-sm">Tickets Remaining</h2>
-                <p className="text-xl">{remainingTickets?.toNumber}</p>
+                <p className="text-xl">{remainingTickets?.toNumber()}</p>
               </div>
             </div>
             <div className="mt-5 mb-3">
@@ -101,6 +151,7 @@ const Home: NextPage = () => {
                 </div>
               </div>
               <button
+                onClick={handleBuyTickets}
                 disabled={
                   isTicketsExpired || remainingTickets?.toNumber() === 0
                 }
@@ -111,6 +162,23 @@ const Home: NextPage = () => {
                 Buy tickets
               </button>
             </div>
+            {userTickets > 0 && (
+              <div className="stats">
+                <p>you have {userTickets} Tickets in this draw</p>
+                <div className="flex max-w-sm flex-wrap gap-2">
+                  {Array(userTickets)
+                    .fill("")
+                    .map((_, idx) => (
+                      <p
+                        key={idx}
+                        className="text-emerald-300 h-20 w-12 bg-emerald-500/30 rounded-lg flex flex-shrink-0 items-center justify-center text-xs italic"
+                      >
+                        {idx + 1}
+                      </p>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
