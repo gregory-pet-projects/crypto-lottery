@@ -36,18 +36,71 @@ export const useLotteryContract = () => {
   const { mutateAsync: BuyTickets, isLoading: isLoadingBuyTickets } =
     useContractWrite(contract, "BuyTickets");
 
-  const { data: ticketPrice } = useContractRead(contract, "ticketPrice");
-  return {
-    address,
-    remainingTickets,
-    currentWinningReward,
-    ticketCommission,
-    expiration,
-    isLoadingExpiration,
-    ticketPrice,
-    isLoadingContract,
-    BuyTickets,
-    isLoadingBuyTickets,
-    tickets,
-  };
+    const { data: winnings } = useContractRead(
+      contract,
+      "getWinningsForAddress",
+      [address]
+    );
+
+    const { data: ticketPrice } = useContractRead(contract, "ticketPrice");
+
+    const { mutateAsync: WithdrawWinnings } = useContractWrite(
+      contract,
+      "WithdrawWinnings"
+    );
+
+    const { data: lastWinner } = useContractRead(contract, "lastWinner");
+    const { data: lastWinnerAmount } = useContractRead(
+      contract,
+      "lastWinnerAmount"
+    );
+
+    const { data: lotteryOperator } = useContractRead(
+      contract,
+      "lotteryOperator"
+    );
+
+    const { data: operatorTotalCommission } = useContractRead(
+      contract,
+      "operatorTotalCommission"
+    );
+
+    const { mutateAsync: DrawWinnerTicket } = useContractWrite(
+      contract,
+      "DrawWinnerTicket"
+    );
+    const { mutateAsync: RefundAll } = useContractWrite(contract, "RefundAll");
+    const { mutateAsync: restartDraw } = useContractWrite(
+      contract,
+      "restartDraw"
+    );
+    const { mutateAsync: WithdrawCommission } = useContractWrite(
+      contract,
+      "WithdrawCommission"
+    );
+
+    return {
+      contract,
+      address,
+      remainingTickets,
+      currentWinningReward,
+      ticketCommission,
+      expiration,
+      isLoadingExpiration,
+      ticketPrice,
+      isLoadingContract,
+      BuyTickets,
+      isLoadingBuyTickets,
+      tickets,
+      winnings,
+      WithdrawWinnings,
+      lastWinner,
+      lastWinnerAmount,
+      lotteryOperator,
+      operatorTotalCommission,
+      DrawWinnerTicket,
+      RefundAll,
+      restartDraw,
+      WithdrawCommission,
+    };
 };
