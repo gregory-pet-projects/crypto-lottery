@@ -1,3 +1,4 @@
+import AdminControls from "@/components/AdminControls";
 import CountdownTimer from "@/components/CountdownTimer";
 import Header from "@/components/Header";
 import Loading from "@/components/Loading";
@@ -7,6 +8,7 @@ import { BigNumber, ethers } from "ethers";
 import { NextPage } from "next";
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import Marquee from "react-fast-marquee";
 import { toast } from "react-hot-toast";
 
 const convertToEtherPrice = (price: number): number =>
@@ -15,6 +17,21 @@ const convertToEtherPrice = (price: number): number =>
 const CURRENCY = "MATIC";
 const priceView = (price: number) =>
   `${convertToEtherPrice(price)} ${CURRENCY}`;
+
+const performContractOperation = async (
+  notification: string,
+  callback: () => Promise<any>,
+  successMessage: string
+) => {
+  try {
+    const data = await callback();
+    toast.success(successMessage, { id: notification });
+    console.info("contract call success", data);
+  } catch (err) {
+    toast.error("Whoops something went wrong!", { id: notification });
+    console.error("contract call failure", err);
+  }
+};
 
 const Home: NextPage = () => {
   const {
@@ -28,6 +45,16 @@ const Home: NextPage = () => {
     ticketCommission,
     BuyTickets,
     tickets,
+    winnings,
+    WithdrawWinnings,
+    lastWinner,
+    lastWinnerAmount,
+    lotteryOperator,
+    operatorTotalCommission,
+    DrawWinnerTicket,
+    RefundAll,
+    restartDraw,
+    WithdrawCommission,
   } = useLotteryContract();
   const [quantity, setQuantity] = useState<number>(1);
   const isTicketsExpired = expiration?.toString() < Date.now().toString();
@@ -47,36 +74,66 @@ const Home: NextPage = () => {
   const handleBuyTickets = async () => {
     if (!ticketPrice) return;
     const notification = toast.loading("Buying your tickets...");
-    try {
+
+    const callback = async () => {
+      //FIXME
       const totalPrice = (
         Number(ethers.utils.formatEther(ticketPrice)) * quantity
       ).toString();
       const payValue = ethers.utils.parseEther(totalPrice);
+      const data = await BuyTickets(payValue);
+    };
 
-      // const data = await BuyTickets([
-      //   {
-      //     value: ethers.utils.parseEther(totalPrice),
-      //   },
-      // ]);
+    await performContractOperation(
+      notification,
+      callback,
+      "Tickets purchased successfully!"
+    );
+  };
 
-      console.log("totalPrice", totalPrice);
-      //      const data = await BuyTickets({ args: [{ ticketPrice: totalPrice }] });
-      const data = await BuyTickets([
-        {
-          value: payValue,
-        },
-      ]);
+  const onWithdrawWinnings = async () => {
+    const notification = toast.loading("Withdraw winning...");
+    await performContractOperation(
+      notification,
+      () => WithdrawWinnings({ args: [{}] }),
+      "Winning withdraw successfully!"
+    );
+  };
 
-      console.log("===>", ethers.utils.parseEther(totalPrice));
+  const drawWinner = async () => {
+    const notification = toast.loading("Picking a Lucky Winner.");
+    await performContractOperation(
+      notification,
+      () => DrawWinnerTicket({}),
+      "A Winner has been selected!"
+    );
+  };
 
-      toast.success("Tickets purchased successfully!", { id: notification });
-      console.log("contract call success", data);
-    } catch (e) {
-      toast.error("Whoops something went wrong!", {
-        id: notification,
-      });
-      console.error("contract call failure", e);
-    }
+  const onWithdrawCommission = async () => {
+    const notification = toast.loading("Withdrawing commission...");
+    await performContractOperation(
+      notification,
+      () => WithdrawCommission({}),
+      "Your commission has been withdrawn successfully!"
+    );
+  };
+
+  const onRestartDraw = async () => {
+    const notification = toast.loading("Restarting draw...");
+    await performContractOperation(
+      notification,
+      () => restartDraw({}),
+      "Draw restart successfully!"
+    );
+  };
+
+  const onRefundAll = async () => {
+    const notification = toast.loading("Refunding all...");
+    await performContractOperation(
+      notification,
+      () => RefundAll({}),
+      "All refunded successfully!"
+    );
   };
 
   if (!address) {
@@ -94,6 +151,40 @@ const Home: NextPage = () => {
       </Head>
       <div className="flex-1">
         <Header />
+        <Marquee className="bg-[#0a1f1c] p-5 mb-5" gradient={false} speed={100}>
+          <div className="flex space-x-10 mx-10">
+            <h4 className="text-white font-bold">Last Winner: {lastWinner}</h4>
+            <h4 className="text-white font-bold">
+              Previous winnings: {priceView(lastWinnerAmount)}
+            </h4>
+          </div>
+        </Marquee>
+
+        {lotteryOperator === address && (
+          <div className="flex justify-center">
+            <AdminControls
+              operatorTotalCommission={priceView(operatorTotalCommission)}
+              drawWinner={drawWinner}
+              onWithdrawCommission={onWithdrawCommission}
+              onRestartDraw={onRestartDraw}
+              onRefundAll={onRefundAll}
+            />
+          </div>
+        )}
+
+        {winnings > 0 && (
+          <div className="max-w-md md:max-w-2xl lg:max-w-4xl mx-auto mt-5">
+            <button
+              onClick={onWithdrawWinnings}
+              className="p-5 bg-gradient-to-b from-orange-500 to-emerald-600 animate-pulse text-center rounded-xl w-full"
+            >
+              <p className="font-bold">Winner Winner Chicken Dinner!</p>
+              <p>Total Winnings: {priceView(winnings)}</p>
+              <br />
+              <p className="font-semibold">Click here to withdraw</p>
+            </button>
+          </div>
+        )}
 
         <div className="space-y-5 md:space-y-0 m-5 md:flex md:flex-row items-start justify-center md:space-x-5">
           <div className="stats-container">
@@ -164,7 +255,9 @@ const Home: NextPage = () => {
             </div>
             {userTickets > 0 && (
               <div className="stats">
-                <p>you have {userTickets} Tickets in this draw</p>
+                <p className="text-lg mb-2">
+                  You have {userTickets} Tickets in this draw
+                </p>
                 <div className="flex max-w-sm flex-wrap gap-2">
                   {Array(userTickets)
                     .fill("")
